@@ -39,7 +39,7 @@ io.on('connection', (socket) => {
   socket.on('user_join', (username) => {
     users[socket.id] = { username, id: socket.id };
     io.emit('user_list', Object.values(users));
-    io.emit('user_joined', { username, id: socket.id });
++ io.emit('user_joined', { username });
     console.log(`${username} joined the chat`);
   });
 
@@ -93,11 +93,21 @@ io.on('connection', (socket) => {
     socket.emit('private_message', messageData);
   });
 
+  // Handle message reactions
+socket.on("add_reaction", ({ msgId, emoji }) => {
+  const msg = messages.find((m) => m.id === msgId);
+  if (msg) {
+    msg.reactions = msg.reactions || {};
+    msg.reactions[emoji] = (msg.reactions[emoji] || 0) + 1;
+    io.emit("update_reactions", msg);
+  }
+});
+
   // Handle disconnection
   socket.on('disconnect', () => {
     if (users[socket.id]) {
       const { username } = users[socket.id];
-      io.emit('user_left', { username, id: socket.id });
++ io.emit('user_left', { username });
       console.log(`${username} left the chat`);
     }
     
